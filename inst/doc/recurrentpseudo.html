@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>recurrentpseudo: An R package for analysing recurrent events in the presence of terminal events using pseudo-observations</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">recurrentpseudo: An R package for analysing
+recurrent events in the presence of terminal events using
+pseudo-observations</h1>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>This package computes pseudo-observations for recurrent event data in
+the presence of terminal events. Three versions exist: One-dimensional,
+two-dimensional or three-dimensional pseudo-observations.</p>
+<p>Following the computation of pseudo-observations, the marginal mean
+function, survival probability and/or cumulative incidences can be
+modelled using generalised estimating equations.</p>
+<p>See Furberg et al. (<em>Bivariate pseudo-observations for recurrent
+event analysis with terminal events (2021)</em>) for technical details
+on the procedure.</p>
+<div id="package-and-main-functions" class="section level2">
+<h2>Package and main functions</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Development version</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#require(devtools)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#devtools::install_github(&quot;JulieKFurberg/recurrentpseudo&quot;, force = TRUE)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(recurrentpseudo)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Main functions</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#?pseudo.onedim</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#?pseudo.twodim</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#?pseudo.threedim</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#?pseudo.geefit</span></span></code></pre></div>
+</div>
+<div id="notation" class="section level2">
+<h2>Notation</h2>
+<p>Let <span class="math inline">\(D^*\)</span> denote the survival time
+and let <span class="math inline">\(N^*(t)\)</span> denote the number of
+recurrent events by time <span class="math inline">\(t\)</span>. Let
+<span class="math inline">\(C\)</span> denote the time of censoring. Due
+to right-censoring, the data consists of <span class="math inline">\(X=\lbrace N(\cdot), D, \delta, Z \rbrace\)</span>
+where <span class="math inline">\(N(t) = N^*(t \wedge C)\)</span>, <span class="math inline">\(D=D^* \wedge C\)</span>, <span class="math inline">\(\delta = I \left( D^* \leq C \right)\)</span> and
+<span class="math inline">\(Z\)</span> denotes <span class="math inline">\(p\)</span> baseline covariates.</p>
+<p>We observe <span class="math inline">\(X_i=\lbrace N_i(\cdot), D_i,
+\delta_i, Z_i \rbrace\)</span> for each individual <span class="math inline">\(i= 1,\ldots, n\)</span>.</p>
+<p>We consider the marginal mean function, <span class="math inline">\(\mu (t)\)</span>, given by <span class="math display">\[
+\mu(t) = E(N^*(t)) = \int_0^t S(u^-) \, d R(u), \quad d R(t) = E(dN^*(t)
+\mid D^* \geq t)
+\]</span> and the survival probability, <span class="math inline">\(S(t)\)</span>, given by <span class="math display">\[
+S(t) = P(D^*&gt; t).
+\]</span></p>
+<p>Moreover, we consider the cumulative incidences for death causes 1,
+<span class="math inline">\(C_1(t)\)</span>, and 2, <span class="math inline">\(C_2(t)\)</span> <span class="math display">\[
+C_1(t) = E(I(D^* \leq t, \Delta = 1)), \quad C_2(t) = E(I(D^* \leq t,
+\Delta = 2))
+\]</span> where <span class="math inline">\(\Delta = \lbrace 1, 2
+\rbrace\)</span> represents a cause-of-death indicator.</p>
+</div>
+<div id="introduction-to-pseudo-observations" class="section level2">
+<h2>Introduction to pseudo-observations</h2>
+<p>The following section serves as a fast introduction to
+pseudo-observations, which the methods of this package is based on.</p>
+<p>For more detailed information, please see</p>
+<ul>
+<li><p>Andersen and Perme (<em>Pseudo-observations in survival analysis
+(2010)</em>) or</p></li>
+<li><p>Andersen, Klein and Rosthøj (<em>Generalised linear models for
+correlated pseudo-observations, with applications to multi-state models
+(2003)</em>)</p></li>
+</ul>
+<p>We wish to formulate a model for <span class="math display">\[
+\theta = E(f(X))
+\]</span> where <span class="math inline">\(X=X_1, \ldots, X_n\)</span>
+denotes a vector of survival times (or other survival data) for <span class="math inline">\(n\)</span> individuals and <span class="math inline">\(f\)</span> denotes some function. An example would
+be <span class="math inline">\(\theta = E(I(D^*&gt;t)) =
+P(D^*&gt;t)\)</span>.</p>
+<p>Assume that a sufficiently nice estimator <span class="math inline">\(\hat{\theta}\)</span> of <span class="math inline">\(\theta\)</span> exists. For a fixed time, <span class="math inline">\(t \in [0, \tau]\)</span>, the pseudo-observation
+for the i’th individual at <span class="math inline">\(t\)</span> is
+given by <span class="math display">\[
+\hat{\theta}_i (t)= n \cdot \hat{\theta}(t) - (n-1) \cdot
+\hat{\theta}^{-i}(t)
+\]</span> where <span class="math inline">\(\hat{\theta}(t)\)</span>
+denotes the estimate based on the total data set, and <span class="math inline">\(\hat{\theta}^{-i}(t)\)</span> denotes the estimate
+based on the same data set but omitting observations from individual
+i.</p>
+<p>Since the survival times are subject to right-censoring, standard
+inference on survival data is adjusted to accommodate this, e.g. in
+likelihood estimation.</p>
+<p>However, since all subjects has a valid pseudo-observation, <span class="math inline">\(\hat{\theta}_i (t)\)</span>, at one or more times,
+these can be used as an outcome variable in a generalised linear model.
+Note, that this is regardless of the whether a subject is alive,
+censored or died at time t.</p>
+<p>Assume that <span class="math inline">\(g\)</span> denotes a link
+function, then we wish to fit</p>
+<p><span class="math display">\[
+g(E(f(X) \mid Z)) = \xi^T Z.
+\]</span> Following, <span class="math inline">\(f(X)\)</span> is
+replaced by <span class="math inline">\(\hat{\theta}_i (\cdot)\)</span>
+in the model fit.</p>
+<p>The model parameters, <span class="math inline">\(\xi\)</span>, are
+estimated using generalised estimating equations (GEE), see Liang and
+Zeger (<em>Longitudinal data analysis using generalized linear models
+(1986)</em>).</p>
+<p>The GEE procedure accommodates the fact that each individual can have
+several (pseudo-)observations.</p>
+</div>
+<div id="one-dimensional-pseudo-observations" class="section level2">
+<h2>One-dimensional pseudo-observations</h2>
+<p>The one-dimensional pseudo-observations model is based on the
+parameter <span class="math inline">\(\theta = \mu(t)\)</span>, which is
+estimated by <span class="math display">\[
+\hat{\theta} = \hat{\mu}(t) =  \int_0^t \hat{S}(u^-) \, d \hat{R}(u),
+\]</span> where <span class="math inline">\(\hat{S}(t)\)</span> denotes
+the Kaplan-Meier estimator of <span class="math inline">\(S(t)\)</span>
+and <span class="math inline">\(\hat{R}(t)\)</span> denotes the
+Nelson-Aalen estimator of <span class="math inline">\(R(t)\)</span>.</p>
+<p>We assume that <span class="math display">\[
+\log \left( \mu(t \mid Z) \right) = \log(\mu_0(t)) + \beta^T Z.
+\]</span></p>
+</div>
+<div id="two-dimensional-pseudo-observations" class="section level2">
+<h2>Two-dimensional pseudo-observations</h2>
+<p>The two-dimensional pseudo-observations model is based on the
+parameter <span class="math inline">\(\theta = (\mu(t), S(t))\)</span>,
+which is estimated by <span class="math display">\[
+\hat{\theta} = \left( \begin{matrix} \hat{\mu}(t) \\ \hat{S}(t)
+\end{matrix} \right).
+\]</span></p>
+<p>We assume that <span class="math display">\[
+\left( \begin{matrix} \log \left(\mu (t \mid Z) \right) \\
+\text{cloglog} \left( S( t \mid Z) \right) \end{matrix} \right)
+=  \left( \begin{matrix} \log \left(  \mu_0(t) \right)  + {\beta}^T {Z}
+\\ \log \left(\Lambda_0(t)\right) + {\gamma}^T {Z}  \end{matrix}
+\right).
+\]</span></p>
+</div>
+<div id="three-dimensional-pseudo-observations" class="section level2">
+<h2>Three-dimensional pseudo-observations</h2>
+<p>The three-dimensional pseudo-observations model is based on the
+parameter <span class="math inline">\(\theta = (\mu(t), C_1(t),
+C_2(t))\)</span>, which is estimated by <span class="math display">\[
+\hat{\theta} = \left( \begin{matrix} \hat{\mu}(t) \\ \hat{C}_1(t) \\
+\hat{C}_2(t) \end{matrix} \right)
+\]</span> where <span class="math inline">\(\hat{C}_1(t)\)</span> and
+<span class="math inline">\(\hat{C}_2(t)\)</span> are the Aalen-Johansen
+estimates of the cumulative incidences for causes 1, <span class="math inline">\(C_1(t)\)</span>, and 2, <span class="math inline">\(C_2(t)\)</span>, respectively.</p>
+<p>We assume that <span class="math display">\[
+\left( \begin{matrix} \log \left(\mu (t \mid Z) \right) \\
+\text{cloglog} \left(1- C_1( t \mid Z) \right) \\ \text{cloglog}
+\left(1- C_2( t \mid Z) \right) \end{matrix} \right) =  \left(
+\begin{matrix} \log \left(  \mu_0(t) \right)  + {\beta}^T {Z} \\ \log
+\left(\Lambda_{10}(t)\right) + {\gamma_1}^T {Z} \\ \log
+\left(\Lambda_{20}(t)\right) + {\gamma_2}^T {Z}  \end{matrix} \right).
+\]</span></p>
+</div>
+</div>
+<div id="example---bladder-cancer-data-from-survival-package" class="section level1">
+<h1>Example - Bladder cancer data from survival package</h1>
+<p>The functions in <code>recurrentpseudo</code> will be exemplified
+using the well-known bladder cancer data from the survival package. This
+data set considers data from a clinical cancer trial conducted by the
+Veterans Administration Cooperative Urological Research Group (Byar:
+<em>The veterans administration study of chemoprophylaxis for recurrent
+stage I bladder tumours: comparisons of placebo, pyridoxine and topical
+thiotepa</em> (1980)) Here, 118 patients with stage I bladder cancer
+were randomised to receive placebo, pyridoxine or thiotepa. After
+randomisation, information on occurrences of superficial bladder tumours
+and any deaths were collected.</p>
+<p>We focus on the comparison between placebo and thiotepa (<span class="math inline">\(n=86\)</span> in total). We model recurrent
+bladder tumours, and adjust for death (cause 1: bladder cancer disease
+death, cause 2: other causes).</p>
+<p>One-, two- and three-dimensional pseudo-observations are computed
+based on a single time point, <span class="math inline">\(t=30\)</span>
+months.</p>
+<p>For the comparison between placebo and thiotepa on recurrent bladder
+tumours, the effect measure of interest is the mean ratio <span class="math inline">\(\exp(\beta)\)</span>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: Bladder cancer data from survival package</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(survival)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Indlæser krævet pakke: survival</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Make a three level status variable</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>bladder1<span class="sc">$</span>status3 <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(bladder1<span class="sc">$</span>status <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>), <span class="dv">2</span>, bladder1<span class="sc">$</span>status)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Add one extra day for the two patients with start=stop=0</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># subset(bladder1, stop &lt;= start)</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>bladder1[bladder1<span class="sc">$</span>id <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;stop&quot;</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>bladder1[bladder1<span class="sc">$</span>id <span class="sc">==</span> <span class="dv">49</span>, <span class="st">&quot;stop&quot;</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Restrict the data to placebo and thiotepa</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>bladdersub <span class="ot">&lt;-</span> <span class="fu">subset</span>(bladder1, treatment <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;placebo&quot;</span>, <span class="st">&quot;thiotepa&quot;</span>))</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Make treatment variable two-level factor</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>bladdersub<span class="sc">$</span>Z <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(<span class="fu">ifelse</span>(bladdersub<span class="sc">$</span>treatment <span class="sc">==</span> <span class="st">&quot;placebo&quot;</span>, <span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(bladdersub<span class="sc">$</span>Z) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;placebo&quot;</span>, <span class="st">&quot;thiotepa&quot;</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(bladdersub)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   id treatment number size recur start stop status rtumor rsize enum status3</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  1   placebo      1    1     0     0    1      3      .     .    1       2</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  2   placebo      1    3     0     0    1      3      .     .    1       2</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  3   placebo      2    1     0     0    4      0      .     .    1       0</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  4   placebo      1    1     0     0    7      0      .     .    1       0</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  5   placebo      5    1     0     0   10      3      .     .    1       2</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6  6   placebo      4    1     1     0    6      1      1     1    1       1</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         Z</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 placebo</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 placebo</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 placebo</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 placebo</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 placebo</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6 placebo</span></span></code></pre></div>
+<p>We fit the univariate pseudo-observation model using the binary
+treatment indicator as covariate, i.e. we model <span class="math display">\[
+\log \left( \mu(t \mid Z) \right) = \log(\mu_0(t)) + \beta Z
+\]</span></p>
+<p>One-dimensional pseudo-observations and GEE fit can be computed using
+the following code,</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pseudo observations at t = 30</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>pseudo_bladder_1d <span class="ot">&lt;-</span> <span class="fu">pseudo.onedim</span>(<span class="at">tstart =</span> bladdersub<span class="sc">$</span>start,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">tstop =</span> bladdersub<span class="sc">$</span>stop,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">status =</span> bladdersub<span class="sc">$</span>status3,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">id =</span> bladdersub<span class="sc">$</span>id,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">covar_names =</span> <span class="st">&quot;Z&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">tk =</span> <span class="fu">c</span>(<span class="dv">30</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">data =</span> bladdersub)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pseudo_bladder_1d<span class="sc">$</span>outdata)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;              mu k ts id       Z</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 -0.0004269178 1 30  1 placebo</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 -0.0004269178 1 30  2 placebo</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  1.2359654463 1 30  3 placebo</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  1.0739859010 1 30  4 placebo</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 -0.0958639918 1 30  5 placebo</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6  1.0122441163 1 30  6 placebo</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># GEE fit</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>fit_bladder_1d <span class="ot">&lt;-</span> <span class="fu">pseudo.geefit</span>(<span class="at">pseudodata =</span> pseudo_bladder_1d,</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>                                <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>))</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>fit_bladder_1d</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $xi</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                       </span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.5590869</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Zthiotepa   -0.4359054</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $sigma</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;             (Intercept)   Zthiotepa</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.02662095 -0.02662095</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Zthiotepa   -0.02662095  0.07934314</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;pseudo.geefit&quot;</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Treatment differences</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>xi_diff_1d <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">c</span>(fit_bladder_1d<span class="sc">$</span>xi[<span class="dv">2</span>]), <span class="at">ncol =</span> <span class="dv">1</span>)</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>mslabels <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;treat, mu&quot;</span>)</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(xi_diff_1d) <span class="ot">&lt;-</span> mslabels</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(xi_diff_1d) <span class="ot">&lt;-</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>xi_diff_1d</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                     </span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu -0.4359054</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Variance matrix for differences</span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>sigma_diff_1d <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(fit_bladder_1d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">2</span>]),</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>                          <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">nrow =</span> <span class="dv">1</span>,</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>                          <span class="at">byrow =</span> T)</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(sigma_diff_1d) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(sigma_diff_1d) <span class="ot">&lt;-</span> mslabels</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>sigma_diff_1d</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;            treat, mu</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu 0.07934314</span></span></code></pre></div>
+<p>Thus, the estimated mean ratio is <span class="math inline">\(\exp(\hat{\beta})=\)</span> 0.6466789 (standard
+error and confidence intervals can be found using the Delta method).</p>
+<p>Alternatively, the bivariate pseudo-observation model using the
+binary treatment indicator as covariate can be fitted, i.e.  <span class="math display">\[
+\left( \begin{matrix} \log \left(\mu (t \mid Z) \right) \\
+\text{cloglog} \left( S( t \mid Z) \right) \end{matrix} \right) = \left(
+\begin{matrix} \log \left(  \mu_0(t) \right)  + {\beta} {Z} \\ \log
+\left(\Lambda_0(t)\right) + {\gamma} {Z}  \end{matrix} \right)
+\]</span></p>
+<p>Two-dimensional pseudo-observations and GEE fit can be computed using
+the following code</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pseudo observations at t = 30</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>pseudo_bladder_2d <span class="ot">&lt;-</span> <span class="fu">pseudo.twodim</span>(<span class="at">tstart =</span> bladdersub<span class="sc">$</span>start,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">tstop =</span> bladdersub<span class="sc">$</span>stop,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">status =</span> bladdersub<span class="sc">$</span>status3,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">id =</span> bladdersub<span class="sc">$</span>id,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">covar_names =</span> <span class="st">&quot;Z&quot;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">tk =</span> <span class="fu">c</span>(<span class="dv">30</span>),</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">data =</span> bladdersub)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pseudo_bladder_2d<span class="sc">$</span>outdata)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;              mu          surv k ts id       Z</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 -0.0004269178  1.421085e-14 1 30  1 placebo</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 -0.0004269178  1.421085e-14 1 30  2 placebo</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  1.2359654463  8.170875e-01 1 30  3 placebo</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  1.0739859010  8.170875e-01 1 30  4 placebo</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 -0.0958639918 -5.305763e-02 1 30  5 placebo</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6  1.0122441163 -5.305763e-02 1 30  6 placebo</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># GEE fit</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>fit_bladder_2d <span class="ot">&lt;-</span> <span class="fu">pseudo.geefit</span>(<span class="at">pseudodata =</span> pseudo_bladder_2d,</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>                                <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>))</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>fit_bladder_2d</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $xi</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                                  </span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu              0.55908687</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu:Zthiotepa   -0.43590539</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypesurv           -1.41652478</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypesurv:Zthiotepa -0.04800778</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $sigma</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                          esttypemu esttypemu:Zthiotepa  esttypesurv</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu              0.026620952        -0.026620952 -0.003481085</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu:Zthiotepa   -0.026620952         0.079343139  0.003481085</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypesurv           -0.003481085         0.003481085  0.123251791</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypesurv:Zthiotepa  0.003481085         0.002758847 -0.123251791</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                       esttypesurv:Zthiotepa</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu                       0.003481085</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu:Zthiotepa             0.002758847</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypesurv                    -0.123251791</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypesurv:Zthiotepa           0.260915569</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;pseudo.geefit&quot;</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Treatment differences</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>xi_diff_2d <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">c</span>(fit_bladder_2d<span class="sc">$</span>xi[<span class="dv">2</span>],</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_2d<span class="sc">$</span>xi[<span class="dv">4</span>]), <span class="at">ncol =</span> <span class="dv">1</span>)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>mslabels <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;treat, mu&quot;</span>, <span class="st">&quot;treat, surv&quot;</span>)</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(xi_diff_2d) <span class="ot">&lt;-</span> mslabels</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(xi_diff_2d) <span class="ot">&lt;-</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>xi_diff_2d</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                        </span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   -0.43590539</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, surv -0.04800778</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a><span class="co"># Variance matrix for differences</span></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>sigma_diff_2d <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(fit_bladder_2d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">2</span>],</span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_2d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">4</span>],</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_2d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">4</span>],</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_2d<span class="sc">$</span>sigma[<span class="dv">4</span>,<span class="dv">4</span>]),</span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>                          <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">nrow =</span> <span class="dv">2</span>,</span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>                          <span class="at">byrow =</span> T)</span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(sigma_diff_2d) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(sigma_diff_2d) <span class="ot">&lt;-</span> mslabels</span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>sigma_diff_2d</span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;               treat, mu treat, surv</span></span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   0.079343139 0.002758847</span></span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, surv 0.002758847 0.260915569</span></span></code></pre></div>
+<p>Finally, one could fit the three-dimensional pseudo-observation model
+to the bladder cancer data.</p>
+<p>Three-dimensional pseudo-observations and GEE fit can be computed
+using the following code</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add deathtype variable to bladder data</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Deathtype = 1 (bladder disease death), deathtype = 2 (other death reason)</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>bladdersub<span class="sc">$</span>deathtype <span class="ot">&lt;-</span> <span class="fu">with</span>(bladdersub, <span class="fu">ifelse</span>(status <span class="sc">==</span> <span class="dv">2</span>, <span class="dv">1</span>, <span class="fu">ifelse</span>(status <span class="sc">==</span> <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">0</span>)))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(bladdersub<span class="sc">$</span>deathtype, bladdersub<span class="sc">$</span>status)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    </span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       0   1   2   3</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0  55 132   0   0</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1   0   0   2   0</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   2   0   0   0  20</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Pseudo-observations</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>pseudo_bladder_3d <span class="ot">&lt;-</span> <span class="fu">pseudo.threedim</span>(<span class="at">tstart =</span> bladdersub<span class="sc">$</span>start,</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">tstop =</span> bladdersub<span class="sc">$</span>stop,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">status =</span> bladdersub<span class="sc">$</span>status3,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">id =</span> bladdersub<span class="sc">$</span>id,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">deathtype =</span> bladdersub<span class="sc">$</span>deathtype,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">covar_names =</span> <span class="st">&quot;Z&quot;</span>,</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">tk =</span> <span class="fu">c</span>(<span class="dv">30</span>), </span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">data =</span> bladdersub)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pseudo_bladder_3d<span class="sc">$</span>outdata_long)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   k ts id esttype             y       Z</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1 30  1      mu -4.269178e-04 placebo</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 1 30  1    surv  1.421085e-14 placebo</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 1 30  1    cif1  0.000000e+00 placebo</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 1 30  1    cif2  1.000000e+00 placebo</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 1 30  2      mu -4.269178e-04 placebo</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6 1 30  2    surv  1.421085e-14 placebo</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co"># GEE fit</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>fit_bladder_3d <span class="ot">&lt;-</span> <span class="fu">pseudo.geefit</span>(<span class="at">pseudodata =</span> pseudo_bladder_3d,</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>                                <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z&quot;</span>))</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>fit_bladder_3d</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $xi</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                                 </span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu              0.5590869</span></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu:Zthiotepa   -0.4359054</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif1           -3.7618319</span></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif1:Zthiotepa  0.2930357</span></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif2           -1.5431978</span></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif2:Zthiotepa -0.1005109</span></span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $sigma</span></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                          esttypemu esttypemu:Zthiotepa esttypecif1</span></span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu              0.026620952        -0.026620952  0.01663610</span></span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu:Zthiotepa   -0.026620952         0.079343139 -0.01663610</span></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif1            0.016636098        -0.016636098  1.07839851</span></span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif1:Zthiotepa -0.016636098         0.013359996 -1.07839851</span></span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif2           -0.006027688         0.006027688 -0.02642283</span></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif2:Zthiotepa  0.006027688         0.001779996  0.02642283</span></span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                       esttypecif1:Zthiotepa  esttypecif2 esttypecif2:Zthiotepa</span></span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu                       -0.01663610 -0.006027688           0.006027688</span></span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypemu:Zthiotepa              0.01336000  0.006027688           0.001779996</span></span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif1                     -1.07839851 -0.026422825           0.026422825</span></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif1:Zthiotepa            2.01305239  0.026422825          -0.057715255</span></span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif2                      0.02642283  0.138167379          -0.138167379</span></span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; esttypecif2:Zthiotepa           -0.05771525 -0.138167379           0.299045959</span></span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;pseudo.geefit&quot;</span></span>
+<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a><span class="co"># Treatment differences</span></span>
+<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a>xi_diff_3d <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">c</span>(fit_bladder_3d<span class="sc">$</span>xi[<span class="dv">2</span>],</span>
+<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>xi[<span class="dv">4</span>],</span>
+<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>xi[<span class="dv">6</span>]), <span class="at">ncol =</span> <span class="dv">1</span>)</span>
+<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a>mslabels <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;treat, mu&quot;</span>, <span class="st">&quot;treat, cif1&quot;</span>, <span class="st">&quot;treat, cif2&quot;</span>)</span>
+<span id="cb6-67"><a href="#cb6-67" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(xi_diff_3d) <span class="ot">&lt;-</span> mslabels</span>
+<span id="cb6-68"><a href="#cb6-68" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(xi_diff_3d) <span class="ot">&lt;-</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb6-69"><a href="#cb6-69" aria-hidden="true" tabindex="-1"></a>xi_diff_3d</span>
+<span id="cb6-70"><a href="#cb6-70" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                       </span></span>
+<span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   -0.4359054</span></span>
+<span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif1  0.2930357</span></span>
+<span id="cb6-73"><a href="#cb6-73" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif2 -0.1005109</span></span>
+<span id="cb6-74"><a href="#cb6-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-75"><a href="#cb6-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-76"><a href="#cb6-76" aria-hidden="true" tabindex="-1"></a><span class="co"># Variance matrix for differences</span></span>
+<span id="cb6-77"><a href="#cb6-77" aria-hidden="true" tabindex="-1"></a>sigma_diff_3d <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">2</span>],</span>
+<span id="cb6-78"><a href="#cb6-78" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">4</span>],</span>
+<span id="cb6-79"><a href="#cb6-79" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">6</span>],</span>
+<span id="cb6-80"><a href="#cb6-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-81"><a href="#cb6-81" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">4</span>],</span>
+<span id="cb6-82"><a href="#cb6-82" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">4</span>,<span class="dv">4</span>],</span>
+<span id="cb6-83"><a href="#cb6-83" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">4</span>,<span class="dv">6</span>],</span>
+<span id="cb6-84"><a href="#cb6-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-85"><a href="#cb6-85" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">2</span>,<span class="dv">6</span>],</span>
+<span id="cb6-86"><a href="#cb6-86" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">4</span>,<span class="dv">6</span>],</span>
+<span id="cb6-87"><a href="#cb6-87" aria-hidden="true" tabindex="-1"></a>                          fit_bladder_3d<span class="sc">$</span>sigma[<span class="dv">6</span>,<span class="dv">6</span>]</span>
+<span id="cb6-88"><a href="#cb6-88" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-89"><a href="#cb6-89" aria-hidden="true" tabindex="-1"></a>                          ),</span>
+<span id="cb6-90"><a href="#cb6-90" aria-hidden="true" tabindex="-1"></a>                        <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">nrow =</span> <span class="dv">3</span>,</span>
+<span id="cb6-91"><a href="#cb6-91" aria-hidden="true" tabindex="-1"></a>                        <span class="at">byrow =</span> T)</span>
+<span id="cb6-92"><a href="#cb6-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-93"><a href="#cb6-93" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(sigma_diff_3d) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(sigma_diff_3d) <span class="ot">&lt;-</span> mslabels</span>
+<span id="cb6-94"><a href="#cb6-94" aria-hidden="true" tabindex="-1"></a>sigma_diff_3d</span>
+<span id="cb6-95"><a href="#cb6-95" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;               treat, mu treat, cif1  treat, cif2</span></span>
+<span id="cb6-96"><a href="#cb6-96" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   0.079343139  0.01336000  0.001779996</span></span>
+<span id="cb6-97"><a href="#cb6-97" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif1 0.013359996  2.01305239 -0.057715255</span></span>
+<span id="cb6-98"><a href="#cb6-98" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif2 0.001779996 -0.05771525  0.299045959</span></span></code></pre></div>
+<p>We can compare the three model fits. Note, that the <span class="math inline">\(\mu\)</span> components match each other.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare - should match for mu elements </span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>xi_diff_1d</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                     </span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu -0.4359054</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>xi_diff_2d</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                        </span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   -0.43590539</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, surv -0.04800778</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>xi_diff_3d</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                       </span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   -0.4359054</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif1  0.2930357</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif2 -0.1005109</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>sigma_diff_1d</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;            treat, mu</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu 0.07934314</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>sigma_diff_2d</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;               treat, mu treat, surv</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   0.079343139 0.002758847</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, surv 0.002758847 0.260915569</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>sigma_diff_3d</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;               treat, mu treat, cif1  treat, cif2</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, mu   0.079343139  0.01336000  0.001779996</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif1 0.013359996  2.01305239 -0.057715255</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; treat, cif2 0.001779996 -0.05771525  0.299045959</span></span></code></pre></div>
+<div id="more-covariates" class="section level3">
+<h3>More covariates</h3>
+<p>Assume that we wish to add extra baseline covariates to the model
+fit. For the sake of illustration, we have simulated a continuous
+covariate, <span class="math inline">\(Z_2\)</span>, and a categorical
+covariate, <span class="math inline">\(Z_3\)</span>. The covariate <span class="math inline">\(Z_1\)</span> corresponds to the binary treatment
+covariate (<span class="math inline">\(Z=1\)</span> is thiotepa and
+<span class="math inline">\(Z=0\)</span> is placebo). In order to make
+estimation for these models possible, the pseudo-observations are
+calculated at three time points, namely <span class="math inline">\(t=20, 30, 40\)</span> months.</p>
+<p>For the one-dimensional model for <span class="math inline">\(\mu\)</span> it holds that,</p>
+<p><span class="math display">\[
+\log \left( \mu(t \mid Z) \right) = \log(\mu_0(t)) + \beta_1 Z_1 +
+\beta_2 Z_2 + \beta_3 Z_3.
+\]</span></p>
+<p>This can be fitted using the below code,</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(dplyr)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="do">## One-dim</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># A binary variable, Z1_</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># A continuous variable, Z2_</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># A categorical variable, Z3_</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">0308</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>bladdersub <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  bladdersub <span class="sc">%&gt;%</span> <span class="fu">group_by</span>(id) <span class="sc">%&gt;%</span> </span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Z1_ =</span> Z,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">Z2_ =</span> <span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="at">mean =</span> <span class="dv">3</span>, <span class="at">sd =</span> <span class="dv">1</span>),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">Z3_ =</span> <span class="fu">sample</span>(<span class="at">x =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>), </span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>                      <span class="at">size =</span> <span class="dv">1</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>                      <span class="at">prob =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>))</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>         ))</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># head(bladdersub, 20)</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Make pseudo obs at more timepoints (more data)</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Pseudo observations at t = 20, 30, 40</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>pseudo_bladder_1d_3t <span class="ot">&lt;-</span> <span class="fu">pseudo.onedim</span>(<span class="at">tstart =</span> bladdersub<span class="sc">$</span>start,</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">tstop =</span> bladdersub<span class="sc">$</span>stop,</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">status =</span> bladdersub<span class="sc">$</span>status3,</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">id =</span> bladdersub<span class="sc">$</span>id,</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z1_&quot;</span>, <span class="st">&quot;Z2_&quot;</span>, <span class="st">&quot;Z3_&quot;</span>),</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">tk =</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>),</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">data =</span> bladdersub)</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">pseudo.geefit</span>(<span class="at">pseudodata =</span> pseudo_bladder_1d_3t, </span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>                      <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z1_&quot;</span>, <span class="st">&quot;Z2_&quot;</span>, <span class="st">&quot;Z3_&quot;</span>))</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>fit1<span class="sc">$</span>xi</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                        </span></span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.39412273</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ztime30      0.42336922</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ztime40      0.59966454</span></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z1_thiotepa -0.29479824</span></span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z2_         -0.08253287</span></span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z3_B         0.01965615</span></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z3_C        -0.38332247</span></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>fit1<span class="sc">$</span>sigma</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;              (Intercept)       Ztime30       Ztime40  Z1_thiotepa           Z2_</span></span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.136673486 -0.0061702979 -0.0109943095 -0.036100986 -0.0247560186</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ztime30     -0.006170298  0.0046658382  0.0061013009  0.001167246  0.0002746085</span></span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ztime40     -0.010994310  0.0061013009  0.0100442253  0.005504053 -0.0004015364</span></span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z1_thiotepa -0.036100986  0.0011672458  0.0055040527  0.090063224 -0.0078557067</span></span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z2_         -0.024756019  0.0002746085 -0.0004015364 -0.007855707  0.0109918233</span></span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z3_B        -0.055441417  0.0005892506  0.0051883496  0.037829933 -0.0035769385</span></span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z3_C        -0.041748863  0.0075014896  0.0141048652  0.023020550 -0.0082026411</span></span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      Z3_B         Z3_C</span></span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.0554414168 -0.041748863</span></span>
+<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ztime30      0.0005892506  0.007501490</span></span>
+<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ztime40      0.0051883496  0.014104865</span></span>
+<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z1_thiotepa  0.0378299330  0.023020550</span></span>
+<span id="cb8-55"><a href="#cb8-55" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z2_         -0.0035769385 -0.008202641</span></span>
+<span id="cb8-56"><a href="#cb8-56" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z3_B         0.0869004239  0.050773663</span></span>
+<span id="cb8-57"><a href="#cb8-57" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Z3_C         0.0507736625  0.200303239</span></span>
+<span id="cb8-58"><a href="#cb8-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-59"><a href="#cb8-59" aria-hidden="true" tabindex="-1"></a>fit1<span class="sc">$</span>xi[<span class="dv">4</span>]</span>
+<span id="cb8-60"><a href="#cb8-60" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -0.2947982</span></span></code></pre></div>
+<p>Or for two-dimensional pseudo-observations, it holds that</p>
+<p><span class="math display">\[
+\left( \begin{matrix} \log \left(\mu (t \mid Z) \right) \\
+\text{cloglog} \left( S( t \mid Z) \right) \end{matrix} \right)
+=  \left( \begin{matrix} \log \left(  \mu_0(t) \right)  + \beta_1 {Z_1}
++ \beta_2 {Z_2} + \beta_3 {Z_3} \\ \log \left(\Lambda_0(t)\right) +
+{\gamma_1} Z_1 + {\gamma_2} Z_2 + {\gamma_3} Z_3 \end{matrix} \right).
+\]</span> Or for three-dimensional pseudo-observations, it holds that
+<span class="math display">\[
+\left( \begin{matrix} \log \left(\mu (t \mid Z) \right) \\
+\text{cloglog} \left(1- C_1( t \mid Z) \right) \\ \text{cloglog} \left(
+1-C_2( t \mid Z) \right) \end{matrix} \right) =  \left( \begin{matrix}
+\log \left(  \mu_0(t) \right)  + {\beta_1} {Z_1} + {\beta_2} {Z_2} +
+{\beta_3} Z_3\\ \log \left(\Lambda_{10}(t)\right) + \gamma_{11} {Z_1} +
+\gamma_{12} {Z_2} + \gamma_{13} {Z_3} \\ \log
+\left(\Lambda_{20}(t)\right) + \gamma_{21} {Z_1} + \gamma_{22} {Z_2}  +
+\gamma_{23} {Z_3} \end{matrix} \right).
+\]</span></p>
+<p>These two models are fitted using the below code,</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Two-dim</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Pseudo observations at t = 20, 30, 40</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>pseudo_bladder_2d_3t <span class="ot">&lt;-</span> <span class="fu">pseudo.twodim</span>(<span class="at">tstart =</span> bladdersub<span class="sc">$</span>start,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">tstop =</span> bladdersub<span class="sc">$</span>stop,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">status =</span> bladdersub<span class="sc">$</span>status3,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">id =</span> bladdersub<span class="sc">$</span>id,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z1_&quot;</span>, <span class="st">&quot;Z2_&quot;</span>, <span class="st">&quot;Z3_&quot;</span>),</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">tk =</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>),</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">data =</span> bladdersub)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">pseudo.geefit</span>(<span class="at">pseudodata =</span> pseudo_bladder_2d_3t, </span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>                      <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z1_&quot;</span>, <span class="st">&quot;Z2_&quot;</span>, <span class="st">&quot;Z3_&quot;</span>))</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># fit2$xi</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="co"># fit2$sigma</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="do">## Three-dim</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>pseudo_bladder_3d_3t <span class="ot">&lt;-</span> <span class="fu">pseudo.threedim</span>(<span class="at">tstart =</span> bladdersub<span class="sc">$</span>start,</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">tstop =</span> bladdersub<span class="sc">$</span>stop,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">status =</span> bladdersub<span class="sc">$</span>status3,</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">id =</span> bladdersub<span class="sc">$</span>id,</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z1_&quot;</span>, <span class="st">&quot;Z2_&quot;</span>, <span class="st">&quot;Z3_&quot;</span>),</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">deathtype =</span> bladdersub<span class="sc">$</span>deathtype,</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">tk =</span> <span class="fu">c</span>(<span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">40</span>),</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">data =</span> bladdersub)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">pseudo.geefit</span>(<span class="at">pseudodata =</span> pseudo_bladder_3d_3t, </span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>                      <span class="at">covar_names =</span> <span class="fu">c</span>(<span class="st">&quot;Z1_&quot;</span>, <span class="st">&quot;Z2_&quot;</span>, <span class="st">&quot;Z3_&quot;</span>))</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a><span class="co"># fit3$xi</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a><span class="co"># fit3$sigma</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a><span class="do">## Compare for mu</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>fit1<span class="sc">$</span>xi[<span class="dv">4</span>]</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -0.2947982</span></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>fit2<span class="sc">$</span>xi[<span class="dv">4</span>]</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -0.2947982</span></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>fit3<span class="sc">$</span>xi[<span class="dv">4</span>]</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -0.2948043</span></span></code></pre></div>
+</div>
+</div>
+<div id="citation" class="section level1">
+<h1>Citation</h1>
+<p>To cite the <code>recurrentpseudo</code> package please use the
+following references,</p>
+<blockquote>
+<p>Julie K. Furberg, Per K. Andersen, Sofie Korn, Morten Overgaard,
+Henrik Ravn: Bivariate pseudo-observations for recurrent event analysis
+with terminal events (Lifetime Data Analysis, 2021)</p>
+</blockquote>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
